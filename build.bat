@@ -83,4 +83,6 @@ if (%ERRORLEVEL%) == (0) (
     echo.
 )
 
+pause
+
 :EXIT

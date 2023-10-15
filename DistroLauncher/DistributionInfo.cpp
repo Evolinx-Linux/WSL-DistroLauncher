@@ -9,25 +9,38 @@ bool DistributionInfo::CreateUser(std::wstring_view userName)
 {
     // Create the user account.
     DWORD exitCode;
-    std::wstring commandLine = L"/usr/sbin/adduser --quiet --gecos '' ";
+    std::wstring commandLine = L"/usr/sbin/useradd -m -U -G adm,wheel ";
     commandLine += userName;
     HRESULT hr = g_wslApi.WslLaunchInteractive(commandLine.c_str(), true, &exitCode);
     if ((FAILED(hr)) || (exitCode != 0)) {
         return false;
     }
 
-    // Add the user account to any relevant groups.
-    commandLine = L"/usr/sbin/usermod -aG adm,cdrom,sudo,dip,plugdev ";
+    commandLine = L"/usr/bin/passwd ";
     commandLine += userName;
-    hr = g_wslApi.WslLaunchInteractive(commandLine.c_str(), true, &exitCode);
-    if ((FAILED(hr)) || (exitCode != 0)) {
+    const wchar_t* passwd = commandLine.c_str();
+    do
+    {
+        hr = g_wslApi.WslLaunchInteractive(passwd, true, &exitCode);
+    } while ((FAILED(hr)) || (exitCode != 0));
 
-        // Delete the user if the group add command failed.
-        commandLine = L"/usr/sbin/deluser ";
-        commandLine += userName;
-        g_wslApi.WslLaunchInteractive(commandLine.c_str(), true, &exitCode);
-        return false;
-    }
+    // Now do hacky thing to set root password with info
+
+    commandLine = L"/usr/bin/echo 'Setup an root password' && /usr/bin/passwd ";
+    commandLine += L"root";
+    const wchar_t* rootpasswd = commandLine.c_str();
+    do
+    {
+        hr = g_wslApi.WslLaunchInteractive(rootpasswd, true, &exitCode);
+    } while ((FAILED(hr)) || (exitCode != 0));
+
+    commandLine = L"/usr/bin/echo 'Remember to enable nonroot users in sudoers file who have wheel group' ";
+    commandLine += L"&& /usr/bin/echo 'Until then use su root to login into root account so you can make needed changes in the rootfs'";
+    const wchar_t* addinfo = commandLine.c_str();
+    do
+    {
+        hr = g_wslApi.WslLaunchInteractive(addinfo, true, &exitCode);
+    } while ((FAILED(hr)) || (exitCode != 0));
 
     return true;
 }

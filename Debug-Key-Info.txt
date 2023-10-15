@@ -1,0 +1,6 @@
+// This is public debug key for quick building
+
+* Name: Evolinx
+* Pass: Evolinx-987-Debug-987
+
+* Now have fun
